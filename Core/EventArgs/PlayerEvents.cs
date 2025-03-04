@@ -25,14 +25,20 @@ using Exiled.API.Features.Items;
 using RemoteAdmin;
 using static System.Net.Mime.MediaTypeNames;
 using Backroom.Core.Classes;
+using Exiled.API.Features.Roles;
+using Respawning;
+using PlayerRoles.FirstPersonControl;
+using Exiled.Events.Commands.Hub;
+using RelativePositioning;
+using Exiled.API.Extensions;
 
 namespace Backroom.Core.EventArgs
 {
     public static class PlayerEvents
     {
-        public static void OnVerified(VerifiedEventArgs ev)
+        public static IEnumerator<float> OnVerified(VerifiedEventArgs ev)
         {
-            ev.Player.Role.Set(RoleTypeId.Tutorial);
+            ev.Player.Role.Set(RoleTypeId.NtfPrivate);
 
             if (!AudioPlayers.ContainsKey(ev.Player))
             {
@@ -52,6 +58,58 @@ namespace Backroom.Core.EventArgs
 
                 AudioPlayers.Add(ev.Player, audioPlayer);
             }
+
+            PlayerStatuses.Add(ev.Player, new PlayerStatus
+            {
+                IsSitDown = false,
+                IsChangingSitDownState = false
+            });
+
+            AudioPlayers[ev.Player].RemoveAllClips();
+            ev.Player.ClearInventory();
+
+            foreach (var item in new List<ItemType>()
+                {
+                    ItemType.Flashlight,
+                    ItemType.Radio,
+                    ItemType.Coin,
+                    ItemType.Coin,
+                    ItemType.Medkit,
+                })
+            {
+                ev.Player.AddItem(item);
+            }
+
+            AudioPlayers[ev.Player].AddClip("military-radio-communication-222904");
+
+            ev.Player.Teleport(Exiled.API.Features.Doors.Door.List.Select(x => x.Type).GetRandomValue());
+            ev.Player.CurrentItem = ev.Player.Items.FirstOrDefault(x => x.Type == ItemType.Flashlight);
+
+            ev.Player.ShowHint("\n\n\n\n\n\n<size=20><color=#0080FF>모리스 사령관</color>: 아, 아, Site-02 기지에는 도착했나?</size>", 3);
+
+            yield return Timing.WaitForSeconds(4);
+
+            ev.Player.ShowHint("\n\n\n\n\n\n<size=20><color=#0080FF>모리스 사령관</color>: (잡음) 교신 상태가 좋지 않은 것 같은데</size>", 4);
+
+            yield return Timing.WaitForSeconds(4.5f);
+
+            ev.Player.ShowHint("\n\n\n\n\n\n<size=20><color=#00BFFF>제임스 중대장</color>: 여기는 Alpha-1,</size>", 1);
+
+            yield return Timing.WaitForSeconds(1.5f);
+
+            ev.Player.ShowHint("\n\n\n\n\n\n<size=20><color=#0080FF>모리스 사령관</color>: 어, 그래. 중대장, 보고할 것이라도 발견했나?</size>", 3);
+
+            yield return Timing.WaitForSeconds(3.5f);
+
+            ev.Player.ShowHint("\n\n\n\n\n\n<size=20><color=#00BFFF>제임스 중대장</color>: 그게.. 유기체가 아예 보이지 않습니다. 과학자와 SCP가..</size>", 2);
+
+            yield return Timing.WaitForSeconds(2.5f);
+
+            ev.Player.ShowHint("\n\n\n\n\n\n<size=20><color=#0080FF>모리스 사령관</color>: 그게 무슨(!#($*^$!^&@*$^!1)(@*)(</size>", 1);
+
+            yield return Timing.WaitForSeconds(1);
+
+            ev.Player.Kill("ㅋ");
         }
 
         public static void OnLeft(LeftEventArgs ev)
@@ -60,21 +118,6 @@ namespace Backroom.Core.EventArgs
 
         public static void OnSpawned(SpawnedEventArgs ev)
         {
-            if (ev.Player.IsAlive)
-            {
-                GodModePlayers.Add(ev.Player);
-
-                Timing.CallDelayed(5, () =>
-                {
-                    if (GodModePlayers.Contains(ev.Player))
-                        GodModePlayers.Remove(ev.Player);
-                });
-
-                ev.Player.Position = FirstSpawnPoint.position;
-                ev.Player.EnableEffect(EffectType.FogControl, 1);
-                ev.Player.EnableEffect(EffectType.SoundtrackMute, 1);
-                ev.Player.EnableEffect(EffectType.SilentWalk, 3);
-            }
         }
 
         public static void OnHurting(HurtingEventArgs ev)
@@ -84,31 +127,89 @@ namespace Backroom.Core.EventArgs
 
             if (!ev.Attacker.IsNPC && GodModePlayers.Contains(ev.Player))
                 ev.IsAllowed = false;
+
+            if (ev.DamageHandler.Type == DamageType.Falldown)
+                ev.DamageHandler.Damage /= 3;
         }
 
-        public static IEnumerator<float> OnDied(DiedEventArgs ev)
+        public static void OnDying(DyingEventArgs ev)
         {
-            if (ev.Attacker != null)
+            ev.IsAllowed = false;
+            
+            ev.Player.DisableAllEffects();
+            ev.Player.EnableEffect(EffectType.SilentWalk, 7);
+            ev.Player.EnableEffect(EffectType.SoundtrackMute, 1);
+            ev.Player.ClearInventory();
+
+            foreach (var item in new List<ItemType>()
+                {
+                    ItemType.Flashlight,
+                    ItemType.Radio,
+                    ItemType.Coin,
+                    ItemType.Coin,
+                    ItemType.Medkit,
+                })
             {
+                ev.Player.AddItem(item);
             }
-
-            for (int i=0; i<5; i++)
-            {
-                ev.Player.ShowHint($"{5 - i}초 뒤 부활합니다.");
-
-                yield return Timing.WaitForSeconds(1);
-            }
-
-            ev.Player.Role.Set(RoleTypeId.Tutorial);
-
-            Timing.CallDelayed(Timing.WaitForOneFrame, () =>
-            {
-                ev.Player.Position = FirstSpawnPoint.position;
-            });
+            ev.Player.Health = 100;
+            ev.Player.Position = new Vector3(Random.Range(-45.46655f, 107.9961f), 1046.391f, Random.Range(-139.3259f, 38.08987f));
         }
 
-        public static void OnTogglingNoClip(TogglingNoClipEventArgs ev)
+        public static IEnumerator<float> OnTogglingNoClip(TogglingNoClipEventArgs ev)
         {
+            if (!PlayerStatuses[ev.Player].IsChangingSitDownState && !ev.Player.IsJumping && !ev.Player.IsNoclipPermitted && ev.Player.IsHuman)
+            {
+                PlayerStatuses[ev.Player].IsChangingSitDownState = true;
+
+                AudioPlayer audioPlayer = AudioPlayer.CreateOrGet($"Player {ev.Player.Nickname}", onIntialCreation: (p) =>
+                {
+                    Speaker speaker = p.AddSpeaker("Main", maxDistance: 3);
+
+                    p.transform.parent = ev.Player.GameObject.transform;
+
+                    speaker.transform.parent = ev.Player.GameObject.transform;
+
+                    speaker.transform.localPosition = Vector3.zero;
+                });
+
+                if (PlayerStatuses[ev.Player].IsSitDown)
+                {
+                    audioPlayer.AddClip($"standing");
+
+                    while (ev.Player.Scale.y >= 0.65f)
+                    {
+                        ev.Player.Scale = new Vector3(1, ev.Player.Scale.y - 0.01f, 1);
+
+                        yield return Timing.WaitForOneFrame;
+                    }
+
+                    ev.Player.EnableEffect(EffectType.Slowness, 50);
+                    ev.Player.EnableEffect(EffectType.SilentWalk, 10);
+
+                    PlayerStatuses[ev.Player].IsSitDown = false;
+                }
+                else
+                {
+                    audioPlayer.AddClip($"sitting");
+
+                    while (ev.Player.Scale.y <= 1)
+                    {
+                        ev.Player.Scale = new Vector3(1, ev.Player.Scale.y + 0.01f, 1);
+
+                        yield return Timing.WaitForOneFrame;
+                    }
+
+                    ev.Player.DisableEffect(EffectType.Slowness);
+                    ev.Player.EnableEffect(EffectType.SilentWalk, 7);
+
+                    PlayerStatuses[ev.Player].IsSitDown = true;
+                }
+
+                PlayerStatuses[ev.Player].IsChangingSitDownState = false;
+            }
+
+            /*
             if (ev.Player.IsHuman && !ev.Player.IsCuffed)
             {
                 if (TryGetLookPlayer(ev.Player, 2f, out Player player, out RaycastHit? hit1))
@@ -144,6 +245,7 @@ namespace Backroom.Core.EventArgs
                     }
                 }
             }
+            */
         }
 
         public static void OnChangedEmotion(ChangedEmotionEventArgs ev)

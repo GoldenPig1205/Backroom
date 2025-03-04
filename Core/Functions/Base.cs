@@ -1,4 +1,5 @@
 ﻿using AdminToys;
+using Backroom.Core.Extensions;
 using Exiled.API.Enums;
 using Exiled.API.Features;
 using Exiled.API.Features.Toys;
@@ -111,6 +112,39 @@ namespace Backroom.Core.Functions
 
             else
                 return "";
+        }
+
+        public static List<Vector3> GenerateUniformPoints(float startX, float startZ, float endX, float endZ, float y, int totalPoints)
+        {
+            List<Vector3> points = new List<Vector3>();
+
+            int sqrtPoints = (int)Math.Ceiling(Math.Sqrt(totalPoints));
+            float xInterval = (endX - startX) / (sqrtPoints - 1);
+            float zInterval = (endZ - startZ) / (sqrtPoints - 1);
+
+            for (int i = 0; i < sqrtPoints; i++)
+            {
+                for (int j = 0; j < sqrtPoints; j++)
+                {
+                    float x = startX + i * xInterval;
+                    float z = startZ + j * zInterval;
+                    points.Add(new Vector3(x, y, z));
+                }
+            }
+
+            return points;
+        }
+
+        public static Vector3 GetRandomLocation()
+        {
+            switch (UnityEngine.Random.Range(1, 3)) 
+            {
+                case 1:
+                    return new Vector3(UnityEngine.Random.Range(-45.46655f, 107.9961f), 1046.391f, UnityEngine.Random.Range(-139.3259f, 38.08987f));
+
+                default:
+                    return new Vector3(UnityEngine.Random.Range(-33.98999f, 64.64844f), 1042.289f, UnityEngine.Random.Range(-98.98218f, -1.117188f));
+            }
         }
     }
 }
