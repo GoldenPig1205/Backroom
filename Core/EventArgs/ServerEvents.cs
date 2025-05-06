@@ -98,8 +98,8 @@ namespace Backroom.Core.EventArgs
                 }
             }
 
-            AiPlayerUtils.CreateAi(RoleTypeId.Scp106, FirstSpawnPoint.position, true);
-            AiPlayerUtils.CreateAi(RoleTypeId.Scp049, new Vector3(50.39742f, 1042.284f, -49.08986f), true);
+            //AiPlayerUtils.CreateAi(RoleTypeId.Scp106, FirstSpawnPoint.position, true);
+            //AiPlayerUtils.CreateAi(RoleTypeId.Scp049, new Vector3(50.39742f, 1042.284f, -49.08986f), true);
         }
     }
 }

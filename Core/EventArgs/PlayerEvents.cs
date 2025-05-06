@@ -105,10 +105,20 @@ namespace Backroom.Core.EventArgs
 
             yield return Timing.WaitForSeconds(2.5f);
 
-            ev.Player.ShowHint("\n\n\n\n\n\n<size=20><color=#0080FF>모리스 사령관</color>: 그게 무슨(!#($*^$!^&@*$^!1)(@*)(</size>", 1);
+            ev.Player.ShowHint("\n\n\n\n\n\n<size=20><color=#0080FF>모리스 사령관</color>: 그게 무ㅅ(!#($*^$!^&(</size>", 1);
 
             yield return Timing.WaitForSeconds(1);
 
+            
+            
+            for (int i = 0; i < 100; i++)
+            {
+                Vector3 pos = ev.Player.Position;
+
+                ev.Player.Position = new Vector3(pos.x, pos.y - 0.01f, pos.z);
+
+                yield return Timing.WaitForSeconds(0.01f);
+            }
             ev.Player.Kill("ㅋ");
         }
 
@@ -139,7 +149,12 @@ namespace Backroom.Core.EventArgs
             ev.Player.DisableAllEffects();
             ev.Player.EnableEffect(EffectType.SilentWalk, 7);
             ev.Player.EnableEffect(EffectType.SoundtrackMute, 1);
+            ev.Player.EnableEffect(EffectType.Blinded, 60);
+            ev.Player.EnableEffect(EffectType.FogControl, 1);
             ev.Player.ClearInventory();
+
+            FirstPersonMovementModule fpcModule = (ev.Player.ReferenceHub.roleManager.CurrentRole as FpcStandardRoleBase).FpcModule;
+            fpcModule.Noclip.IsActive = true;
 
             foreach (var item in new List<ItemType>()
                 {
@@ -152,8 +167,11 @@ namespace Backroom.Core.EventArgs
             {
                 ev.Player.AddItem(item);
             }
+
+            fpcModule.Noclip.IsActive = false;
+
             ev.Player.Health = 100;
-            ev.Player.Position = new Vector3(Random.Range(-45.46655f, 107.9961f), 1046.391f, Random.Range(-139.3259f, 38.08987f));
+            ev.Player.Position = FirstSpawnPoint.position;
         }
 
         public static IEnumerator<float> OnTogglingNoClip(TogglingNoClipEventArgs ev)
