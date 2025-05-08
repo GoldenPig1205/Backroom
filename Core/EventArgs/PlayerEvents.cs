@@ -209,19 +209,22 @@ namespace Backroom.Core.EventArgs
                 }
                 else
                 {
-                    audioPlayer.AddClip($"sitting");
-
-                    while (ev.Player.Scale.y <= 1)
+                    if (!Physics.Raycast(ev.Player.Position, Vector3.up, out RaycastHit hit, 1, (LayerMask)1))
                     {
-                        ev.Player.Scale = new Vector3(1, ev.Player.Scale.y + 0.01f, 1);
+                        audioPlayer.AddClip($"sitting");
 
-                        yield return Timing.WaitForOneFrame;
-                    }
+                        while (ev.Player.Scale.y <= 1)
+                        {
+                            ev.Player.Scale = new Vector3(1, ev.Player.Scale.y + 0.01f, 1);
 
-                    ev.Player.DisableEffect(EffectType.Slowness);
-                    ev.Player.EnableEffect(EffectType.SilentWalk, 7);
+                            yield return Timing.WaitForOneFrame;
+                        }
 
-                    PlayerStatuses[ev.Player].IsSitDown = true;
+                        ev.Player.DisableEffect(EffectType.Slowness);
+                        ev.Player.EnableEffect(EffectType.SilentWalk, 7);
+
+                        PlayerStatuses[ev.Player].IsSitDown = true;
+                    } 
                 }
 
                 PlayerStatuses[ev.Player].IsChangingSitDownState = false;
